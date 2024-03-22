@@ -45,7 +45,7 @@ function Form() {
             "Order ID does not match. Please make sure to put the correct Amazon order number."
           );
           setLoading(false);
-          return;
+          throw new Error("Non-200 status code");
         }
 
         setAsin(response.data.asins[0]);
