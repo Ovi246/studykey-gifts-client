@@ -27,6 +27,7 @@ function Form() {
   const handleNextStep = async (event) => {
     event.preventDefault();
     setLoading(true);
+
     if (step === 2) {
       try {
         const response = await axios.post(
@@ -48,16 +49,18 @@ function Form() {
         }
 
         setAsin(response.data.asins[0]);
-
-        setTimeout(() => {
-          setStep(step + 1);
-          setCompletedSteps([...completedSteps, step]);
-          setLoading(false);
-        }, 1000); // simulate loading time
       } catch (error) {
         console.error(error);
+        setLoading(false);
+        return;
       }
     }
+
+    setTimeout(() => {
+      setStep(step + 1);
+      setCompletedSteps([...completedSteps, step]);
+      setLoading(false);
+    }, 1000); // simulate loading time
   };
 
   const handleInputChange = (event) => {
