@@ -30,7 +30,7 @@ function Form() {
     if (step === 2) {
       // Replace with your actual backend URL and request parameters
       const response = await fetch(
-        "https://feedback-server-kfhcqiasu-ovi246s-projects.vercel.app/validate-order-id",
+        "https://feedback-server-zeta.vercel.app/validate-order-id",
         {
           method: "POST",
           headers: {
