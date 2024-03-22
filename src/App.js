@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CSSTransition, SwitchTransition } from "react-transition-group";
 import { toast } from "react-toastify";
-
+import axios from "axios";
 // Your form component
 function Form() {
   const [step, setStep] = useState(1);
@@ -29,27 +29,28 @@ function Form() {
     setLoading(true);
     if (step === 2) {
       // Replace with your actual backend URL and request parameters
-      const response = await fetch(
-        "https://feedback-server-zeta.vercel.app/validate-order-id",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await response.json();
-
-      setAsin(data?.asins[0]);
-
-      if (!response.ok) {
-        toast.error(
-          "Order ID does not match. Please make sure to put the correct Amazon order number."
+      try {
+        const response = await axios.post(
+          "https://feedback-server-zeta.vercel.app/validate-order-id",
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
-        setLoading(false);
-        return;
+
+        if (response.status !== 200) {
+          toast.error(
+            "Order ID does not match. Please make sure to put the correct Amazon order number."
+          );
+          setLoading(false);
+          return;
+        }
+
+        setAsin(response.data.asins[0]);
+      } catch (error) {
+        console.error(error);
       }
     }
 
