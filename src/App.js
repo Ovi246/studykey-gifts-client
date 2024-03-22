@@ -28,7 +28,6 @@ function Form() {
     event.preventDefault();
     setLoading(true);
     if (step === 2) {
-      // Replace with your actual backend URL and request parameters
       try {
         const response = await axios.post(
           "https://feedback-server-zeta.vercel.app/validate-order-id",
@@ -49,16 +48,16 @@ function Form() {
         }
 
         setAsin(response.data.asins[0]);
+
+        setTimeout(() => {
+          setStep(step + 1);
+          setCompletedSteps([...completedSteps, step]);
+          setLoading(false);
+        }, 1000); // simulate loading time
       } catch (error) {
         console.error(error);
       }
     }
-
-    setTimeout(() => {
-      setStep(step + 1);
-      setCompletedSteps([...completedSteps, step]);
-      setLoading(false);
-    }, 1000); // simulate loading time
   };
 
   const handleInputChange = (event) => {
