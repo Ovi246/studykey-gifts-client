@@ -60,7 +60,7 @@ function Form() {
     if (step === 2) {
       try {
         const response = await axios.post(
-          "https://feedback-server-zeta.vercel.app/validate-order-id",
+          "https://studykey-riddles-server.vercel.app/validate-order-id",
           formData,
           {
             headers: {
