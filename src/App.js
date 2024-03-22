@@ -29,13 +29,16 @@ function Form() {
     setLoading(true);
     if (step === 2) {
       // Replace with your actual backend URL and request parameters
-      const response = await fetch("http://localhost:5000/validate-order-id", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        "https://feedback-server-kfhcqiasu-ovi246s-projects.vercel.app/validate-order-id",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
