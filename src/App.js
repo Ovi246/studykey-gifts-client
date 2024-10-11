@@ -6,6 +6,13 @@ import Fireworks from "@fireworks-js/react";
 import Popup from "reactjs-popup";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
+import IntroPhoto from "./assets/intro page.png";
+import Photo1 from "./assets/(1).png";
+import Photo2 from "./assets/(2).png";
+import Photo3 from "./assets/(3).png";
+import Photo4 from "./assets/(4).png";
+import Photo5 from "./assets/(5).png";
+import Photo6 from "./assets/(6).png";
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -39,33 +46,26 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(3);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
   const [formData, setFormData] = useState({
-    productName: "",
-    satisfaction: null,
     orderId: "",
-    duration: "",
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     address: "",
-    city: "",
-    zip: "",
-    state: "",
-    newsletter: "",
-    reviews: "",
+    set: "",
   });
   const [isCorrect, setIsCorrect] = useState(false);
   const [answer, setAnswer] = useState("");
-  const [attempts, setAttempts] = useState(3);
+  const [attempts, setAttempts] = useState(0);
   const [showFireworks, setShowFireworks] = useState(false);
   const [showReward, setShowReward] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const { t } = useTranslation();
   const [language, setLanguage] = useState("en");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     async function fetchLocationAndSetLanguage() {
@@ -119,13 +119,55 @@ function Form() {
     setShowFeedbackForm(true);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (step === 1) {
+      if (!formData.name.trim()) {
+        newErrors.name = "Name is required";
+      }
+
+      if (!formData.set) {
+        newErrors.set = "Please select a Study Key set";
+      }
+      if (!formData.orderId) {
+        newErrors.orderId = "Order ID is required";
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.email.trim()) {
+        newErrors.email = "Email is required";
+      }
+      if (!formData.address) {
+        newErrors.address = "Address is required";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNextStep = async (event) => {
     event.preventDefault();
+
+    if (step > 1) {
+      if (!validateForm()) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+    }
+
     setLoading(true);
-    if (step === 2) {
+    if (step === 1) {
+      if (!validateForm()) {
+        toast.error("Please fill in all required fields");
+        setLoading(false);
+        return;
+      }
       try {
         const response = await axios.post(
-          "https://studykey-gifts-server.vercel.app/validate-order-id",
+          "http://localhost:5000/validate-order-id",
           { orderId: formData.orderId },
           {
             headers: {
@@ -135,7 +177,8 @@ function Form() {
         );
         setAsin(response.data.asins[0]);
       } catch (error) {
-        if (error.response.status === 400) {
+        console.log(error?.response.status);
+        if (error?.response.status === 400) {
           toast.error(
             "Order ID does not match. Please make sure to put the correct Amazon order number."
           );
@@ -158,6 +201,10 @@ function Form() {
     setFormData({
       ...formData,
       [event.target.name]: event.target.value,
+    });
+    setErrors({
+      ...errors,
+      [event.target.name]: "",
     });
   };
 
@@ -210,618 +257,304 @@ function Form() {
     );
   }
 
-  // if (!showFeedbackForm) {
-  //   return (
-  //     <div className="h-screen w-screen flex flex-col gap-10 items-center justify-center bg-gradient-to-br from-blue-500 to-pink-500 font-poppins">
-  //       <img
-  //         alt="Logo"
-  //         className="rounded-full border aspect-square object-contain mx-auto"
-  //         height="200"
-  //         src="logo.png"
-  //         width="200"
-  //       />
-  //       <div className="min-h-[250px] w-full md:w-[700px] rounded-xl bg-white bg-opacity-30 backdrop-blur-[10px] p-6 text-white flex flex-col items-center justify-center">
-  //         <div className="space-y-2">
-  //           <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-  //             {t("solveRiddlePrompt")}
-  //           </h1>
-  //         </div>
-  //         <p className="text-lg font-semibold leading-none border-2 border-white rounded-md p-4 mt-5 text-center w-full md:w-3/2">
-  //           {t("riddle")}
-  //         </p>
-  //         <div className="flex flex-col gap-5 w-full md:min-w-[400px] justify-center md:flex-row mt-5">
-  //           <input
-  //             className="w-full md:max-w-sm bg-transparent border-b-2 border-t-2 placeholder-white placeholder-opacity-50 py-2 px-4 rounded-md"
-  //             placeholder={t("buttonPlaceholder")}
-  //             type="text"
-  //             value={answer}
-  //             onChange={(e) => setAnswer(e.target.value)}
-  //           />
-  //           <button
-  //             className="bg-white bg-opacity-30 backdrop-blur-[10px] text-white shadow-md p-2 rounded-md"
-  //             onClick={checkAnswer}
-  //           >
-  //             {t("buttonText")}
-  //           </button>
-  //         </div>
-  //         {attempts < 3 && <p>Remaining attempts: {attempts}</p>}
-  //       </div>
-  //       <select
-  //         className="mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-  //         onChange={changeLanguage}
-  //         value={language}
-  //       >
-  //         <option value="en">English</option>
-  //         <option value="es">Spanish</option>
-  //       </select>
-  //       {isCorrect && (
-  //         <Popup
-  //           open={showReward}
-  //           closeOnDocumentClick
-  //           onClose={() => setShowReward(false)}
-  //           modal
-  //           nested
-  //         >
-  //           <div className="modal bg-white p-5 rounded-lg flex flex-col gap-5">
-  //             <h1 className="text-xl font-bold">Congratulations!</h1>
-  //             <p>You've correctly answered the riddle!</p>
-  //             <button
-  //               onClick={claimReward}
-  //               className="bg-black text-white px-3 py-2 rounded-md"
-  //             >
-  //               Claim your free reward!
-  //             </button>
-  //           </div>
-  //         </Popup>
-  //       )}
-  //       {showFireworks && (
-  //         <Fireworks
-  //           style={{
-  //             position: "absolute",
-  //             top: 0,
-  //             left: 0,
-  //             width: "100%",
-  //             height: "100%",
-  //             zIndex: 9999,
-  //             pointerEvents: "none",
-  //           }}
-  //           options={{
-  //             speed: 3,
-  //             count: 200,
-  //             gravity: 0.3,
-  //             explosion: 50,
-  //             duration: 2 * 1000,
+  console.log(step);
 
-  //             calc: (props, i) => ({
-  //               ...props,
-  //               x:
-  //                 (i % 2) * window.innerWidth -
-  //                 (i / 2) * window.innerWidth +
-  //                 (i % 2) * 100 -
-  //                 50,
-  //               y:
-  //                 window.innerHeight -
-  //                 200 +
-  //                 Math.random() * 100 -
-  //                 50 +
-  //                 (i === 2 ? -80 : 0),
-  //             }),
-  //           }}
-  //         />
-  //       )}
-  //     </div>
-  //   );
-  // }
+  if (showFeedbackForm) {
+    if (step === 1) {
+      return (
+        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4 ">
+          <div className="max-w-4xl w-full">
+            <h1 className="text-3xl font-bold text-center mb-8">
+              Here is your first step to receiving your gift!
+            </h1>
+            <div className="relative">
+              <div className="absolute -left-10 top-0 -translate-x-1/2 z-50 ">
+                <img
+                  src={Photo2}
+                  width={250}
+                  height={300}
+                  alt="Don't put off until tomorrow what you can do today."
+                  className="rounded-lg shadow-md"
+                />
+              </div>
+              <div className="absolute -left-20 top-40 -translate-x-1/3 -rotate-12 z-40">
+                <img
+                  src={Photo1}
+                  width={250}
+                  height={300}
+                  alt="No dejes para mañana lo que puedes hacer hoy."
+                  className="rounded-lg shadow-md"
+                />
+              </div>
+              <form className="space-y-6 ml-32">
+                <div>
+                  <label htmlFor="name" className="block text-lg mb-2">
+                    What should I call you, my fellow language lover?
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                      errors.name ? "border-2 border-yellow-400" : ""
+                    }`}
+                    placeholder="Name"
+                    required
+                  />
+                  {errors.name && (
+                    <p className="text-yellow-400 mt-1">{errors.name}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="set" className="block text-lg mb-2">
+                    Which Study Key set did you choose to add to your learning?
+                  </label>
+                  <select
+                    id="set"
+                    name="set"
+                    value={formData.set}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                      errors.set ? "border-2 border-yellow-400" : ""
+                    }`}
+                    required
+                  >
+                    <option value="">Select Product Set</option>
+                    <option value="multi">Multi Set Spanish Flashcards</option>
+                    <option value="nouns">
+                      Nouns English to Spanish Flashcards
+                    </option>
+                    <option value="toddlers">
+                      Toddlers English learn & Play
+                    </option>
+                  </select>
+                  {errors.set && (
+                    <p className="text-yellow-400 mt-1">{errors.set}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="orderId" className="block text-lg mb-2">
+                    Please let me know your order number here. You can find it
+                    in your Amazon account under "Orders."
+                  </label>
+                  <input
+                    type="text"
+                    id="orderId"
+                    name="orderId"
+                    value={formData.orderId}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                      errors.orderId ? "border-2 border-yellow-400" : ""
+                    }`}
+                    placeholder="amazon order id"
+                    required
+                  />
+                  {errors.orderId && (
+                    <p className="text-yellow-400 mt-1">{errors.orderId}</p>
+                  )}
+                </div>
+                <button
+                  onClick={handleNextStep}
+                  className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+                >
+                  Next
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (step === 2) {
+      return (
+        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4 ">
+          <div className="max-w-4xl w-full">
+            <h1 className="text-3xl font-bold text-center mb-8">
+              Here is your first step to receiving your gift!
+            </h1>
+            <div className="relative">
+              <div className="absolute -left-10 top-0 -translate-x-1/2 z-50 -rotate-6">
+                <img
+                  src={Photo3}
+                  width={250}
+                  height={300}
+                  alt="Don't put off until tomorrow what you can do today."
+                  className="rounded-lg shadow-md"
+                />
+              </div>
+              <div className="absolute -left-20 top-40 -translate-x-1/3 rotate-12 z-40">
+                <img
+                  src={Photo4}
+                  width={250}
+                  height={300}
+                  alt="No dejes para mañana lo que puedes hacer hoy."
+                  className="rounded-lg shadow-md"
+                />
+              </div>
+              <form className="space-y-6 ml-32">
+                <div>
+                  <label htmlFor="address" className="block text-lg mb-2">
+                    Where can I send your gift?
+                  </label>
+                  <p>
+                    Please include your full address, city, zip code, etc., so
+                    it doesn't get lost.
+                  </p>
+                  <input
+                    type="text"
+                    id="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded"
+                    placeholder="full address"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-lg mb-2">
+                    Please let me know your order number here. You can find it
+                    in your Amazon account under "Orders."
+                  </label>
+                  <input
+                    type="text"
+                    id="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded"
+                    placeholder="valid email"
+                    required
+                  />
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+                >
+                  Next
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (step === 3) {
+      return (
+        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+          <div className="max-w-6xl w-full flex flex-col md:flex-row items-center md:items-start">
+            <div className="md:w-2/3 space-y-6 text-center md:text-left">
+              <h1 className="text-4xl font-bold">Thank you, [Name]!</h1>
+              <p className="text-xl">
+                I'm so excited for you to use it! I'll personally make sure
+                everything goes smoothly.
+              </p>
+              <p className="text-lg">
+                It's a beautiful day! Please let me know how I did with your
+                current set. Your honest feedback helps me create better
+                learning tools for learners like you.
+              </p>
+              <p className="text-lg">
+                I'd love to hear your ideas and thoughts.
+              </p>
+              <button
+                href="#"
+                className="block w-full bg-red-500 text-white text-center py-3 rounded-lg text-xl font-semibold hover:bg-red-600 transition duration-300"
+              >
+                Share my feed back
+              </button>
+              <p className="text-gray-600">This will NOT affect your gift.</p>
+            </div>
+            <div className="md:w-1/3 relative h-64 md:h-auto">
+              <div className="absolute top-0 right-0 w-48 h-48 transform rotate-12">
+                <img
+                  src={Photo5}
+                  width={250}
+                  height={300}
+                  alt="I understand"
+                  layout="fill"
+                  objectFit="contain"
+                  className="rounded-lg shadow-md"
+                />
+              </div>
+              <div className="absolute top-16 right-16 w-48 h-48 transform -rotate-6">
+                <img
+                  src={Photo6}
+                  alt="I understand"
+                  width={250}
+                  height={300}
+                  layout="fill"
+                  objectFit="contain"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl md:max-w-4xl w-full text-center space-y-6">
+          <h1 className="text-4xl font-bold text-gray-800">Hiiiiii....</h1>
+          <p className="text-xl md:text-4xl text-gray-700 leading-relaxed">
+            Since you took the leap to start your learning journey, I wanted to
+            give you this gift to add a little fun and soul.
+          </p>
+          <p className="text-xl md:text-4xl text-gray-700 leading-relaxed">
+            It took me a few months to create and perfect this gift, but I
+            wanted it to have the perfect balance! I hope you enjoy it!
+          </p>
+          <p className="text-xl md:text-4xl text-gray-700">
+            With love,
+            <br />
+            <span className="font-semibold">Nafiseh</span>
+          </p>
+          <p className="text-lg text-gray-600 font-semibold italic">
+            Founder & Fellow Spanish Lover
+          </p>
+          <div className="pt-6">
+            <button
+              onClick={handleNextStep}
+              className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <>
-        <Toaster
-          position="top-center"
-          reverseOrder={false}
-          gutter={8}
-          containerClassName=""
-          containerStyle={{}}
-          toastOptions={{
-            // Define default options
-            className: "",
-            duration: 5000,
-            style: {
-              background: "#363636",
-              color: "#fff",
-            },
-
-            // Default options for specific types
-            success: {
-              duration: 3000,
-              theme: {
-                primary: "green",
-                secondary: "black",
-              },
-            },
-          }}
-        />
-        <div className="max-w-2xl mx-auto p-6">
-          <div className="text-3xl font-bold my-8">Feedback Form</div>
-          <div className="flex justify-between items-center mb-8">
-            <div
-              className={`w-8 h-8 text-white rounded-full flex items-center justify-center ${
-                step >= 1 ? "bg-black" : "bg-gray-300"
-              }`}
-              onClick={() => handleStepClick(1)}
-            >
-              1
+        <div className="min-h-screen bg-blue-100 flex items-center justify-center p-4">
+          <div className="w-full max-w-screen-2xl mx-auto flex flex-col md:flex-row items-center justify-between">
+            <div className="w-full md:w-1/2 text-center mb-8 md:mb-0 pr-0 md:pr-8">
+              <h1 className="text-4xl md:text-6xl font-script mb-6">
+                Congratulation!
+              </h1>
+              <p className="text-xl md:text-3xl text-blue-400 mb-8">
+                You are one of our 250 lucky learners to win our Soul Delight
+                pack!
+              </p>
+              <button
+                onClick={claimReward}
+                className="inline-block bg-red-500 text-white font-bold py-4 px-8 rounded-full text-xl hover:bg-red-600 transition duration-300"
+              >
+                Claim your gift now!
+              </button>
             </div>
-            <div
-              className={`flex-grow h-1 ${
-                step >= 2 ? "bg-black" : "bg-gray-300"
-              }`}
-            ></div>
-            <div
-              className={`w-8 h-8 text-white rounded-full flex items-center justify-center ${
-                step >= 2 ? "bg-black" : "bg-gray-300"
-              }`}
-              onClick={() => handleStepClick(2)}
-            >
-              2
-            </div>
-            <div
-              className={`flex-grow h-1 ${
-                step >= 3 ? "bg-black" : "bg-gray-300"
-              }`}
-            ></div>
-            <div
-              className={`w-8 h-8 text-white rounded-full flex items-center justify-center ${
-                step >= 3 ? "bg-black" : "bg-gray-300"
-              }`}
-              onClick={() => handleStepClick(3)}
-            >
-              3
-            </div>
-            <div
-              className={`flex-grow h-1 ${
-                step >= 4 ? "bg-black" : "bg-gray-300"
-              }`}
-            ></div>
-            <div
-              className={`w-8 h-8 text-white rounded-full flex items-center justify-center ${
-                step >= 4 ? "bg-black" : "bg-gray-300"
-              }`}
-              onClick={() => handleStepClick(4)}
-            >
-              4
+            <div className="w-full md:w-1/2 relative">
+              <img
+                src={IntroPhoto}
+                width={600}
+                height={500}
+                alt="Study Key Soul Delight pack"
+                className="rounded-lg shadow-md w-full h-auto"
+              />
             </div>
           </div>
-          <SwitchTransition>
-            <CSSTransition key={step} timeout={500} classNames="fade">
-              <>
-                {step === 1 && (
-                  <form onSubmit={handleSubmit}>
-                    <h2 className="text-2xl font-semibold mb-4">
-                      PLEASE TELL US WHICH PRODUCT YOU’VE PURCHASED.
-                    </h2>
-                    <div className="mb-6">
-                      <label
-                        className="block text-sm font-medium mb-2"
-                        htmlFor="product"
-                      >
-                        Which product did you purchase? *
-                      </label>
-                      <input
-                        id="product"
-                        placeholder="Product name"
-                        className="..."
-                        name="productName"
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <fieldset className="mb-6">
-                      <legend className="text-sm font-medium mb-2">
-                        How do you feel about this product?
-                      </legend>
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="very-satisfied"
-                            className="..."
-                            name="satisfaction"
-                            value="very-satisfied"
-                            onChange={handleInputChange}
-                          />
-                          <label className="text-sm" htmlFor="very-satisfied">
-                            Very Satisfied
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="somewhat-satisfied"
-                            className="..."
-                            name="satisfaction"
-                            value="very-satisfied"
-                            onChange={handleInputChange}
-                          />
-                          <label className="text-sm" htmlFor="very-satisfied">
-                            Somewhat Satisfied
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="neutral-satisfied"
-                            className="..."
-                            name="satisfaction"
-                            value="very-satisfied"
-                            onChange={handleInputChange}
-                          />
-                          <label className="text-sm" htmlFor="very-satisfied">
-                            Neither Satisfied nor Dissatisfied
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="somewhat-dissatisfied"
-                            className="..."
-                            name="satisfaction"
-                            value="very-dissatisfied"
-                            onChange={handleInputChange}
-                          />
-                          <label className="text-sm" htmlFor="very-satisfied">
-                            Somewhat Dissatisfied
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="very-dissatisfied"
-                            className="..."
-                            name="satisfaction"
-                            value="very-dissatisfied"
-                            onChange={handleInputChange}
-                          />
-                          <label className="text-sm" htmlFor="very-satisfied">
-                            Very Dissatisfied
-                          </label>
-                        </div>
-                      </div>
-                    </fieldset>
-                    <fieldset className="mb-6">
-                      <legend className="text-sm font-medium mb-2">
-                        Have you been using this product for at least 7 days? *
-                      </legend>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="yes"
-                            name="duration"
-                            value="yes"
-                            className="..."
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="yes">Yes</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="no"
-                            name="duration"
-                            value="no"
-                            className="..."
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="no">No</label>
-                        </div>
-                      </div>
-                    </fieldset>
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={handleNextStep}
-                      className="p-4 rounded-lg border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full bg-black text-white"
-                    >
-                      Continue
-                    </button>
-                  </form>
-                )}
-                {step === 2 && (
-                  <form onSubmit={handleNextStep}>
-                    <h2 className="text-2xl font-semibold my-5 uppercase">
-                      Please enter your information with amazon order number.
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <label
-                          htmlFor="first-name"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          First Name *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="first-name"
-                          placeholder="First Name"
-                          name="firstName"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="last-name"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Last Name *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="last-name"
-                          placeholder="Last Name"
-                          name="lastName"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="order-id"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Amazon Order ID *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="order-id"
-                          placeholder="Order ID"
-                          name="orderId"
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="email"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Email Address *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="email"
-                          placeholder="Email Address"
-                          name="email"
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="street"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Street Address *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="street"
-                          placeholder="Street Address"
-                          name="address"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="city"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          City *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="city"
-                          placeholder="City"
-                          name="city"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="zip"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          ZIP Code *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="zip"
-                          placeholder="ZIP Code"
-                          name="zip"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="state"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          State *
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="state"
-                          placeholder="State"
-                          name="state"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <fieldset>
-                          <legend className="text-sm font-medium mb-2">
-                            Please send me special offers
-                          </legend>
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="yes"
-                                name="newsletter"
-                                value="yes"
-                                className="..."
-                                onChange={handleInputChange}
-                              />
-                              <label htmlFor="yes">Yes</label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="no"
-                                name="newsletter"
-                                value="no"
-                                className="..."
-                                onChange={handleInputChange}
-                              />
-                              <label htmlFor="no">No</label>
-                            </div>
-                          </div>
-                        </fieldset>
-                      </div>
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="p-4 rounded-lg border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full bg-black text-white"
-                    >
-                      Continue
-                    </button>
-                  </form>
-                )}
-                {step === 3 && (
-                  <>
-                    {formData.satisfaction === "very-satisfied" && (
-                      <form onSubmit={handleSubmit}>
-                        <div className="max-w-2xl mx-auto p-8">
-                          <h1 className="text-3xl font-bold text-center mb-4">
-                            PLEASE SHARE YOUR EXPERIENCE!
-                          </h1>
-                          <p className="text-lg text-center mb-4">
-                            We would love to earn your product feedback! You can
-                            copy your review below and share your product
-                            experience on Amazon. It would really help our small
-                            business. Thank you!
-                          </p>
-                          <div className="flex justify-center my-6">
-                            <img
-                              alt="Amazon logo"
-                              className="h-20"
-                              height="80"
-                              src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg"
-                              style={{
-                                aspectRatio: "240/80",
-                                objectFit: "contain",
-                              }}
-                              width="240"
-                            />
-                          </div>
-                          <div className="flex justify-center mb-6">
-                            <StarIcon className="text-yellow-400 w-8 h-8" />
-                            <StarIcon className="text-yellow-400 w-8 h-8" />
-                            <StarIcon className="text-yellow-400 w-8 h-8" />
-                            <StarIcon className="text-yellow-400 w-8 h-8" />
-                            <StarIcon className="text-yellow-400 w-8 h-8" />
-                          </div>
-                          <label
-                            className="block text-lg font-medium mb-2"
-                            htmlFor="review-comments"
-                          >
-                            Review / Comments (Minimum 150 characters to be
-                            eligible for your free item) *
-                          </label>
-                          <textarea
-                            className="flex min-h-[80px] border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full p-4 border rounded-md mb-6"
-                            id="review-comments"
-                            placeholder="Type your review here."
-                            name="reviews"
-                            onChange={handleInputChange}
-                          />
-                          <a
-                            href={`https://www.amazon.com/review/create-review?asin=${asin}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-primary/90 h-10 bg-blue-600 text-white py-3 px-6 rounded-md mb-4"
-                          >
-                            CLICK TO POST A REVIEW ON AMAZON
-                          </a>
-                          <button
-                            type="submit"
-                            disabled={loading}
-                            className="mt-10 inline-flex items-center justify-center w-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-primary/90 h-10 bg-black text-white py-3 px-6 rounded-md"
-                          >
-                            SUBMIT AND GET YOUR FREE ITEM!
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                    {formData.satisfaction === "very-dissatisfied" && (
-                      <form onSubmit={handleSubmit}>
-                        <div className="max-w-2xl mx-auto p-8">
-                          <h1 className="text-3xl font-bold text-center mb-4">
-                            PLEASE SHARE YOUR EXPERIENCE!
-                          </h1>
-
-                          <label
-                            className="block text-lg font-medium mb-2"
-                            htmlFor="review-comments"
-                          >
-                            Review / Comments (Minimum 150 characters to be
-                            eligible for your free item) *
-                          </label>
-                          <textarea
-                            className="flex min-h-[80px] border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full p-4 border rounded-md mb-6"
-                            id="review-comments"
-                            placeholder="Type your review here."
-                            name="reviews"
-                            onChange={handleInputChange}
-                          />
-
-                          <button
-                            type="submit"
-                            disabled={loading}
-                            className="mt-10 inline-flex items-center justify-center w-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-primary/90 h-10 bg-black text-white py-3 px-6 rounded-md"
-                          >
-                            SUBMIT AND GET YOUR FREE ITEM!
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </>
-                )}
-                {step === 4 && (
-                  <>
-                    <div className="max-w-2xl mx-auto my-10 p-6">
-                      <h1 className="text-4xl font-bold text-center mb-6">
-                        THANK YOU!
-                      </h1>
-                      <p className="text-lg text-center mb-4">
-                        We value your time and appreciate your business. One of
-                        our customer support representatives will reach out to
-                        you soon. Enjoy your free item!
-                      </p>
-                      <p className="text-sm text-center">
-                        *Limit one free item per household or customer. Offer
-                        only valid with full-priced purchases. Proof of purchase
-                        from an authorized retailer required. No additional
-                        purchase is necessary. Our offer is not dependent on the
-                        quality of feedback that you provide. Offer only valid
-                        within the United States. Void where prohibited. Offer
-                        only valid while supplies last. Subject to change or
-                        cancellation at any time.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </>
-            </CSSTransition>
-          </SwitchTransition>
         </div>
       </>
     </>
