@@ -46,7 +46,7 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(3);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
@@ -167,7 +167,7 @@ function Form() {
       }
       try {
         const response = await axios.post(
-          "http://localhost:5000/validate-order-id",
+          "https://studykey-gifts-server.vercel.app/validate-order-id",
           { orderId: formData.orderId },
           {
             headers: {
