@@ -444,7 +444,9 @@ function Form() {
         <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
           <div className="max-w-6xl w-full flex flex-col md:flex-row items-center md:items-start">
             <div className="md:w-2/3 space-y-6 text-center md:text-left">
-              <h1 className="text-4xl font-bold">Thank you, [Name]!</h1>
+              <h1 className="text-4xl font-bold">
+                Thank you, {formData.name}!
+              </h1>
               <p className="text-xl">
                 I'm so excited for you to use it! I'll personally make sure
                 everything goes smoothly.
