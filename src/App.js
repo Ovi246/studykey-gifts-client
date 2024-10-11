@@ -46,7 +46,7 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(2);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
@@ -136,7 +136,7 @@ function Form() {
     }
 
     if (step === 2) {
-      if (!formData.email.trim()) {
+      if (!formData.email) {
         newErrors.email = "Email is required";
       }
       if (!formData.address) {
@@ -210,6 +210,12 @@ function Form() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (step === 2) {
+      if (!validateForm()) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+    }
     setLoading(true);
     try {
       const response = await axios.post(
@@ -370,9 +376,6 @@ function Form() {
       return (
         <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4 ">
           <div className="max-w-4xl w-full">
-            <h1 className="text-3xl font-bold text-center mb-8">
-              Here is your first step to receiving your gift!
-            </h1>
             <div className="relative">
               <div className="absolute -left-10 top-0 -translate-x-1/2 z-50 -rotate-6">
                 <img
@@ -404,28 +407,43 @@ function Form() {
                   <input
                     type="text"
                     id="address"
+                    name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded"
+                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                      errors.address ? "border-2 border-yellow-400" : ""
+                    }`}
                     placeholder="full address"
                     required
                   />
+                  {errors.address && (
+                    <p className="text-yellow-400 mt-1">{errors.address}</p>
+                  )}
                 </div>
 
                 <div>
                   <label htmlFor="email" className="block text-lg mb-2">
-                    Please let me know your order number here. You can find it
-                    in your Amazon account under "Orders."
+                    What is your best email address?
                   </label>
+                  <p>
+                    I will use this for tracking information and future deals,
+                    as well as tips to help with your learning!
+                  </p>
                   <input
-                    type="text"
+                    type="email"
                     id="email"
+                    name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded"
+                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                      errors.email ? "border-2 border-yellow-400" : ""
+                    }`}
                     placeholder="valid email"
                     required
                   />
+                  {errors.email && (
+                    <p className="text-yellow-400 mt-1">{errors.email}</p>
+                  )}
                 </div>
                 <button
                   onClick={handleSubmit}
