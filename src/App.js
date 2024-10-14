@@ -46,7 +46,7 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
@@ -235,7 +235,12 @@ function Form() {
           setLoading(false);
         }, 1000); // simulate loading time
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+      if (error.response.data.errorCode === "DUPLICATE_EMAIL") {
+        toast.error("This email is already claimed a gift!");
+      }
+    }
   };
 
   const handleStepClick = (stepNumber) => {
@@ -478,10 +483,15 @@ function Form() {
                 I'd love to hear your ideas and thoughts.
               </p>
               <button
-                href="#"
+                onClick={() =>
+                  window.open(
+                    `https://www.amazon.com/review/create-review/?ie=UTF8&channel=glance-detail&asin=${asin}`,
+                    "_blank"
+                  )
+                }
                 className="block w-full bg-red-500 text-white text-center py-3 rounded-lg text-xl font-semibold hover:bg-red-600 transition duration-300"
               >
-                Share my feed back
+                Share my feedback
               </button>
               <p className="text-gray-600">This will NOT affect your gift.</p>
             </div>
