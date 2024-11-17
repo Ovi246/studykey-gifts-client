@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { CSSTransition, SwitchTransition } from "react-transition-group";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import axios from "axios";
-import Fireworks from "@fireworks-js/react";
-import Popup from "reactjs-popup";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
 import IntroPhoto from "./assets/intro page.png";
@@ -236,9 +233,11 @@ function Form() {
         }, 1000); // simulate loading time
       }
     } catch (error) {
-      console.log(error);
-      if (error.response.data.errorCode === "DUPLICATE_EMAIL") {
-        toast.error("This email is already claimed a gift!");
+      if (error.response.data.errorCode === "DUPLICATE_CLAIM") {
+        toast.error("This order is already claimed a gift!");
+        setTimeout(() => {
+          setLoading(false);
+        }, 500); // simulate loading time
       }
     }
   };
@@ -369,7 +368,7 @@ function Form() {
                   onClick={handleNextStep}
                   className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
                 >
-                  Next
+                  {loading ? "Loading..." : "Next"}
                 </button>
               </form>
             </div>
@@ -454,7 +453,7 @@ function Form() {
                   onClick={handleSubmit}
                   className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
                 >
-                  Next
+                  {loading ? "Loading..." : "Next"}
                 </button>
               </form>
             </div>
@@ -547,7 +546,7 @@ function Form() {
               onClick={handleNextStep}
               className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
             >
-              Next
+              {loading ? "Loading..." : "Next"}
             </button>
           </div>
         </div>
