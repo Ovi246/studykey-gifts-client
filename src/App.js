@@ -1,6 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import PhoneInput, {
+  isPossiblePhoneNumber,
+  isValidPhoneNumber,
+  formatPhoneNumber,
+} from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import validator from "validator";
+import {
+  CitySelect,
+  CountrySelect,
+  StateSelect,
+} from "react-country-state-city";
+import "react-country-state-city/dist/react-country-state-city.css";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
 import IntroPhoto from "./assets/intro page.png";
@@ -49,10 +62,16 @@ function Form() {
   const [asin, setAsin] = useState();
   const [formData, setFormData] = useState({
     orderId: "",
-    name: "",
+    firstName: "",
     email: "",
-    address: "",
     set: "",
+    country: { name: "United States", id: 233 },
+    lastName: "",
+    streetAddress: "",
+    city: "",
+    state: { name: "", id: null },
+    zipCode: "",
+    phoneNumber: "",
   });
   const [isCorrect, setIsCorrect] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -116,12 +135,58 @@ function Form() {
     setShowFeedbackForm(true);
   };
 
-  const validateForm = () => {
+  // Add this debounce function at the top level
+  const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
+
+  // ZIP code validation function using API
+  const validateZipCode = async (zipCode, state, city) => {
+    try {
+      const response = await axios.get(
+        `https://api.zippopotam.us/us/${zipCode}`
+      );
+
+      const zipData = response.data;
+
+      // Check if ZIP matches state and city
+      const matchesState = zipData.places.some(
+        (place) => place.state.toLowerCase() === state.toLowerCase()
+      );
+
+      const matchesCity = zipData.places.some(
+        (place) => place["place name"].toLowerCase() === city.toLowerCase()
+      );
+
+      if (!matchesState) {
+        return `This ZIP code is not in ${state}`;
+      }
+      if (!matchesCity) {
+        return `This ZIP code is not in ${city}`;
+      }
+
+      return null; // Return null if validation passes
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return "Invalid ZIP code";
+      }
+      return "Error validating ZIP code";
+    }
+  };
+
+  const validateForm = async () => {
     const newErrors = {};
 
     if (step === 1) {
-      if (!formData.name.trim()) {
-        newErrors.name = "Name is required";
+      if (!formData.firstName.trim()) {
+        newErrors.firstName = "Name is required";
+      }
+      if (!formData.lastName.trim()) {
+        newErrors.lastName = "Name is required";
       }
 
       if (!formData.set) {
@@ -133,16 +198,62 @@ function Form() {
     }
 
     if (step === 2) {
+      // Phone validation
+      if (!formData.phoneNumber) {
+        newErrors.phoneNumber = "Phone number is required";
+      } else if (
+        !isPossiblePhoneNumber(formData.phoneNumber) ||
+        !isValidPhoneNumber(formData.phoneNumber)
+      ) {
+        newErrors.phoneNumber = "Please enter a valid US phone number";
+      }
+      // Email validation
       if (!formData.email) {
         newErrors.email = "Email is required";
+      } else if (!validator.isEmail(formData.email)) {
+        newErrors.email = "Invalid email";
       }
-      if (!formData.address) {
-        newErrors.address = "Address is required";
+      if (!formData.streetAddress)
+        newErrors.streetAddress = "Street address is required";
+      if (!formData.city) newErrors.city = "City is required";
+      if (!formData.state?.name) newErrors.state = "State is required";
+    }
+
+    // ZIP code validation
+    if (!formData.zipCode) {
+      newErrors.zipCode = "ZIP code is required";
+    } else if (formData.city && formData.state?.name) {
+      const zipError = await validateZipCode(
+        formData.zipCode,
+        formData.state.name,
+        formData.city
+      );
+      if (zipError) {
+        newErrors.zipCode = zipError;
       }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // ZIP code change handler
+  const handleZipCodeChange = async (e) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 5);
+    handleInputChange("zipCode", value);
+
+    // Only validate when ZIP code is complete
+    if (value.length === 5 && formData.city && formData.state?.name) {
+      const zipError = await validateZipCode(
+        value,
+        formData.state.name,
+        formData.city
+      );
+      setErrors((prev) => ({
+        ...prev,
+        zipCode: zipError,
+      }));
+    }
   };
 
   const handleNextStep = async (event) => {
@@ -194,21 +305,35 @@ function Form() {
     }, 1000); // simulate loading time
   };
 
-  const handleInputChange = (event) => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
-    setErrors({
-      ...errors,
-      [event.target.name]: "",
-    });
+  const handleInputChange = (eventOrName, value) => {
+    if (typeof eventOrName === "string") {
+      // Handle onChange from react-country-state-city components
+      setFormData({
+        ...formData,
+        [eventOrName]: value,
+      });
+      setErrors({
+        ...errors,
+        [eventOrName]: "",
+      });
+    } else {
+      // Handle onChange from standard input elements
+      const { name, value } = eventOrName.target;
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (step === 2) {
-      if (!validateForm()) {
+      if (!validateForm() || errors) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -267,8 +392,6 @@ function Form() {
     );
   }
 
-  console.log(step);
-
   if (showFeedbackForm) {
     if (step === 1) {
       return (
@@ -301,20 +424,36 @@ function Form() {
                   <label htmlFor="name" className="block text-lg mb-2">
                     What should I call you, my fellow language lover?
                   </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                      errors.name ? "border-2 border-yellow-400" : ""
-                    }`}
-                    placeholder="Name"
-                    required
-                  />
-                  {errors.name && (
-                    <p className="text-yellow-400 mt-1">{errors.name}</p>
-                  )}
+                  <div className="w-full flex gap-5 justify-between">
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                        errors.firstName ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="FirstName"
+                      required
+                    />
+                    {errors.firstName && (
+                      <p className="text-yellow-400 mt-1">{errors.firstName}</p>
+                    )}
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                        errors.lastName ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="LastName"
+                      required
+                    />
+                    {errors.lastName && (
+                      <p className="text-yellow-400 mt-1">{errors.lastName}</p>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="set" className="block text-lg mb-2">
@@ -399,61 +538,234 @@ function Form() {
                   className="rounded-lg shadow-md"
                 />
               </div>
-              <form className="space-y-6 ml-32">
-                <div>
-                  <label htmlFor="address" className="block text-lg mb-2">
-                    Where can I send your gift?
-                  </label>
-                  <p>
-                    Please include your full address, city, zip code, etc., so
-                    it doesn't get lost.
-                  </p>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                      errors.address ? "border-2 border-yellow-400" : ""
-                    }`}
-                    placeholder="full address"
-                    required
-                  />
-                  {errors.address && (
-                    <p className="text-yellow-400 mt-1">{errors.address}</p>
-                  )}
-                </div>
+              <form className="space-y-6 ml-32" onSubmit={handleSubmit}>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="country" className="block text-lg mb-2">
+                      Country
+                    </label>
+                    <CountrySelect
+                      id="country"
+                      name="country"
+                      value="United States"
+                      onChange={(selectedOption) =>
+                        handleInputChange("country", {
+                          name: "United States",
+                          id: 233,
+                        })
+                      }
+                      disabled={true}
+                      defaultValue={{ name: "United States", id: 233 }}
+                      required
+                      placeHolder="Select Country"
+                      className={{
+                        control: (state) =>
+                          `!bg-red-500 !border-0 !min-h-[48px] !rounded ${
+                            errors.country ? "!border-2 !border-yellow-400" : ""
+                          }`,
+                        singleValue: () => "!text-white",
+                        placeholder: () => "!text-white/70",
+                        input: () => "!text-white",
+                        menu: () => "!bg-red-500 !mt-1",
+                        option: () =>
+                          "!text-white !bg-red-500 hover:!bg-red-600",
+                        container: () => "!text-white",
+                      }}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          padding: "0.5rem",
+                          backgroundColor: "rgb(239 68 68)",
+                          boxShadow: "none",
+                          "&:hover": {
+                            borderColor: errors.country
+                              ? "#FBBF24"
+                              : "transparent",
+                          },
+                        }),
+                        indicatorSeparator: () => ({
+                          display: "none",
+                        }),
+                        dropdownIndicator: (base) => ({
+                          ...base,
+                          color: "white",
+                          "&:hover": {
+                            color: "white",
+                          },
+                        }),
+                      }}
+                    />
 
-                <div>
-                  <label htmlFor="email" className="block text-lg mb-2">
-                    What is your best email address?
-                  </label>
-                  <p>
-                    I will use this for tracking information and future deals,
-                    as well as tips to help with your learning!
-                  </p>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                      errors.email ? "border-2 border-yellow-400" : ""
-                    }`}
-                    placeholder="valid email"
-                    required
-                  />
-                  {errors.email && (
-                    <p className="text-yellow-400 mt-1">{errors.email}</p>
-                  )}
+                    {errors.country && (
+                      <p className="text-yellow-400 mt-1">{errors.country}</p>
+                    )}
+                  </div>
+
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="streetAddress"
+                      className="block text-lg mb-2"
+                    >
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      id="streetAddress"
+                      name="streetAddress"
+                      value={formData.streetAddress}
+                      onChange={(e) =>
+                        handleInputChange(e.target.name, e.target.value)
+                      }
+                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                        errors.streetAddress ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="Street address"
+                      required
+                    />
+                    {errors.streetAddress && (
+                      <p className="text-yellow-400 mt-1">
+                        {errors.streetAddress}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="state" className="block text-lg mb-2">
+                      State/Province
+                    </label>
+                    <StateSelect
+                      id="state"
+                      name="state"
+                      countryid={233}
+                      value={formData.state.name}
+                      onChange={(selectedOption) =>
+                        handleInputChange("state", {
+                          name: selectedOption.name,
+                          id: selectedOption.id,
+                        })
+                      }
+                      className={`w-full p-3 bg-red-500 text-white rounded ${
+                        errors.state ? "border-2 border-yellow-400" : ""
+                      }`}
+                      required
+                      placeHolder="Select State"
+                    />
+                    {errors.state && (
+                      <p className="text-yellow-400 mt-1">{errors.state}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="city" className="block text-lg mb-2">
+                      City
+                    </label>
+                    <CitySelect
+                      id="city"
+                      name="city"
+                      countryid={233}
+                      stateid={formData.state?.id}
+                      value={formData.city}
+                      onChange={(selectedOption) =>
+                        handleInputChange("city", selectedOption.name)
+                      }
+                      className={`w-full p-3 bg-red-500 text-white rounded ${
+                        errors.city ? "border-2 border-yellow-400" : ""
+                      }`}
+                      required
+                      placeHolder="Select City"
+                    />
+                    {errors.city && (
+                      <p className="text-yellow-400 mt-1">{errors.city}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="zipCode" className="block text-lg mb-2">
+                      ZIP/Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      id="zipCode"
+                      name="zipCode"
+                      maxLength="5"
+                      value={formData.zipCode}
+                      onChange={handleZipCodeChange}
+                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                        errors.zipCode ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="ZIP code"
+                      required
+                    />
+                    {errors.zipCode && (
+                      <p className="text-yellow-400 mt-1">{errors.zipCode}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="phoneNumber" className="block text-lg mb-2">
+                      Phone Number
+                    </label>
+                    <PhoneInput
+                      international={false}
+                      defaultCountry="US"
+                      countrySelectProps={{ disabled: true }}
+                      value={formData.phoneNumber}
+                      onChange={(value) => {
+                        handleInputChange("phoneNumber", value);
+
+                        if (value) {
+                          const isValid =
+                            isPossiblePhoneNumber(value) &&
+                            isValidPhoneNumber(value);
+                          setErrors((prev) => ({
+                            ...prev,
+                            phoneNumber: isValid
+                              ? null
+                              : "Please enter a valid US phone number",
+                          }));
+                        }
+                      }}
+                      className={`w-full  bg-red-500 text-white rounded ${
+                        errors.phoneNumber ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="(XXX) XXX-XXXX"
+                      numberInputProps={{
+                        className: "phone-input-field",
+                        pattern: "[0-9()\\-. ]+", // Fixed pattern with escaped hyphen
+                      }}
+                      required
+                    />
+
+                    {errors.phoneNumber && (
+                      <p className="text-yellow-400 mt-1">
+                        {errors.phoneNumber}
+                      </p>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <label htmlFor="email" className="block text-lg mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        handleInputChange(e.target.name, e.target.value)
+                      }
+                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                        errors.email ? "border-2 border-yellow-400" : ""
+                      }`}
+                      placeholder="Email address"
+                      required
+                    />
+                    {errors.email && (
+                      <p className="text-yellow-400 mt-1">{errors.email}</p>
+                    )}
+                  </div>
                 </div>
                 <button
-                  onClick={handleSubmit}
+                  type="submit"
                   className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
                 >
-                  {loading ? "Loading..." : "Next"}
+                  {loading ? "Loading..." : "Submit"}
                 </button>
               </form>
             </div>

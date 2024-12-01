@@ -3,3 +3,75 @@
 @import "tailwindcss/utilities";
 
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;400;600&display=swap");
+
+
+.phone-input-field {
+  background-color: rgb(239 68 68) !important;
+  color: white !important;
+  padding: 0.75rem !important;
+  border: none !important;
+  outline: none !important;
+  width: 100% !important;
+}
+
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  background-color: rgb(239 68 68);
+  border-radius: 0.25rem;
+}
+
+.PhoneInputInput {
+  font-family: monospace;
+  background-color: transparent;
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+.PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.PhoneInputCountry {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.PhoneInputCountryIcon {
+  opacity: 0.9;
+}
+
+/* Add this to your CSS file */
+.select__control {
+  background-color: rgb(239 68 68) !important;
+  border-color: transparent !important;
+}
+
+.select__single-value {
+  color: white !important;
+}
+
+.select__menu {
+  background-color: rgb(239 68 68) !important;
+}
+
+.select__option {
+  background-color: rgb(239 68 68) !important;
+  color: white !important;
+}
+
+.select__option:hover {
+  background-color: rgb(220 38 38) !important;
+}
+
+.select__input-container {
+  color: white !important;
+}
+
+.select__placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
