@@ -56,7 +56,7 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(2);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
@@ -333,36 +333,40 @@ function Form() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (step === 2) {
-      if (!validateForm() || errors) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
-    }
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        "https://studykey-gifts-server.vercel.app/submit-review",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+      try {
+        // Wait for validateForm to complete since it's async now
+        const isValid = await validateForm();
+
+        if (!isValid) {
+          toast.error("Please fill in all required fields");
+          return;
         }
-      );
-      if (response.status === 200) {
-        toast.success("Form submitted successfully!");
-        setTimeout(() => {
-          setStep(step + 1);
-          setCompletedSteps([...completedSteps, step]);
-          setLoading(false);
-        }, 1000); // simulate loading time
-      }
-    } catch (error) {
-      if (error.response.data.errorCode === "DUPLICATE_CLAIM") {
-        toast.error("This order is already claimed a gift!");
-        setTimeout(() => {
-          setLoading(false);
-        }, 500); // simulate loading time
+
+        setLoading(true);
+        const response = await axios.post(
+          "https://studykey-gifts-server.vercel.app/submit-review",
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.status === 200) {
+          toast.success("Form submitted successfully!");
+          setTimeout(() => {
+            setStep(step + 1);
+            setCompletedSteps([...completedSteps, step]);
+            setLoading(false);
+          }, 1000); // simulate loading time
+        }
+      } catch (error) {
+        if (error.response.data.errorCode === "DUPLICATE_CLAIM") {
+          toast.error("This order is already claimed a gift!");
+          setTimeout(() => {
+            setLoading(false);
+          }, 500); // simulate loading time
+        }
       }
     }
   };
