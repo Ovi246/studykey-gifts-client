@@ -56,7 +56,7 @@ i18n.use(initReactI18next).init({
 
 // Your form component
 function Form() {
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [asin, setAsin] = useState();
