@@ -82,6 +82,7 @@ function Form() {
   const { t } = useTranslation();
   const [language, setLanguage] = useState("en");
   const [errors, setErrors] = useState({});
+  const [isVerify, setIsVerify] = useState(false);
 
   useEffect(() => {
     async function fetchLocationAndSetLanguage() {
@@ -256,53 +257,54 @@ function Form() {
     }
   };
 
-  const handleNextStep = async (event) => {
+  const handleNextStep = (event) => {
     event.preventDefault();
 
-    if (step > 1) {
-      if (!validateForm()) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields");
+      return;
     }
 
     setLoading(true);
-    if (step === 1) {
-      if (!validateForm()) {
-        toast.error("Please fill in all required fields");
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await axios.post(
-          "https://studykey-gifts-server.vercel.app/validate-order-id",
-          { orderId: formData.orderId },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        setAsin(response.data.asins[0]);
-      } catch (error) {
-        console.log(error?.response.status);
-        if (error?.response.status === 400) {
-          toast.error(
-            "Order ID does not match. Please make sure to put the correct Amazon order number."
-          );
-        } else {
-          toast.error("Internal server error! Please try again later!");
-        }
-        setLoading(false);
-        return;
-      }
-    }
 
     setTimeout(() => {
-      setStep(step + 1);
-      setCompletedSteps([...completedSteps, step]);
+      setStep((prev) => prev + 1);
+      setCompletedSteps((prev) => [...prev, step]);
       setLoading(false);
     }, 1000); // simulate loading time
+  };
+
+  const handleVerifyOrder = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        "https://studykey-gifts-server.vercel.app/validate-order-id",
+        { orderId: formData.orderId },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      setAsin(response.data.asins[0]);
+      setIsVerify(true);
+    } catch (error) {
+      if (error?.response?.status === 400) {
+        toast.error(
+          "Order ID does not match. Please make sure to put the correct Amazon order number."
+        );
+      } else {
+        toast.error("Internal server error! Please try again later!");
+      }
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
   };
 
   const handleInputChange = (eventOrName, value) => {
@@ -399,440 +401,437 @@ function Form() {
   if (showFeedbackForm) {
     if (step === 1) {
       return (
-        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4 ">
-          <div className="max-w-4xl w-full">
+        <div className="min-h-screen bg-blue-50 flex flex-col-reverse md:flex-row items-center justify-center p-4 ">
+          <div className="mt-5">
+            <div className=" z-50 ">
+              <img
+                src={Photo2}
+                width={250}
+                height={300}
+                alt="Don't put off until tomorrow what you can do today."
+                className="rounded-lg shadow-md"
+              />
+            </div>
+            <div className="-rotate-12 z-40">
+              <img
+                src={Photo1}
+                width={250}
+                height={300}
+                alt="No dejes para mañana lo que puedes hacer hoy."
+                className="rounded-lg shadow-md"
+              />
+            </div>
+          </div>
+          <form className="space-y-6 md:ml-10">
             <h1 className="text-3xl font-bold text-center mb-8">
               Here is your first step to receiving your gift!
             </h1>
-            <div className="relative">
-              <div className="absolute -left-10 top-0 -translate-x-1/2 z-50 ">
-                <img
-                  src={Photo2}
-                  width={250}
-                  height={300}
-                  alt="Don't put off until tomorrow what you can do today."
-                  className="rounded-lg shadow-md"
+            <div>
+              <label htmlFor="name" className="block text-lg mb-2">
+                What should I call you, my fellow language lover?
+              </label>
+              <div className="w-full flex gap-5 justify-between">
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                    errors.firstName ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="FirstName"
+                  required
                 />
-              </div>
-              <div className="absolute -left-20 top-40 -translate-x-1/3 -rotate-12 z-40">
-                <img
-                  src={Photo1}
-                  width={250}
-                  height={300}
-                  alt="No dejes para mañana lo que puedes hacer hoy."
-                  className="rounded-lg shadow-md"
+                {errors.firstName && (
+                  <p className="text-yellow-400 mt-1">{errors.firstName}</p>
+                )}
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                    errors.lastName ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="LastName"
+                  required
                 />
+                {errors.lastName && (
+                  <p className="text-yellow-400 mt-1">{errors.lastName}</p>
+                )}
               </div>
-              <form className="space-y-6 ml-32">
-                <div>
-                  <label htmlFor="name" className="block text-lg mb-2">
-                    What should I call you, my fellow language lover?
-                  </label>
-                  <div className="w-full flex gap-5 justify-between">
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                        errors.firstName ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="FirstName"
-                      required
-                    />
-                    {errors.firstName && (
-                      <p className="text-yellow-400 mt-1">{errors.firstName}</p>
-                    )}
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      className={`w-1/2 p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                        errors.lastName ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="LastName"
-                      required
-                    />
-                    {errors.lastName && (
-                      <p className="text-yellow-400 mt-1">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="set" className="block text-lg mb-2">
-                    Which Study Key set did you choose to add to your learning?
-                  </label>
-                  <select
-                    id="set"
-                    name="set"
-                    value={formData.set}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                      errors.set ? "border-2 border-yellow-400" : ""
-                    }`}
-                    required
-                  >
-                    <option value="">Select Product Set</option>
-                    <option value="multi">Multi Set Spanish Flashcards</option>
-                    <option value="nouns">
-                      Nouns English to Spanish Flashcards
-                    </option>
-                    <option value="toddlers">
-                      Toddlers English learn & Play
-                    </option>
-                  </select>
-                  {errors.set && (
-                    <p className="text-yellow-400 mt-1">{errors.set}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="orderId" className="block text-lg mb-2">
-                    Please let me know your order number here. You can find it
-                    in your Amazon account under "Orders."
-                  </label>
-                  <input
-                    type="text"
-                    id="orderId"
-                    name="orderId"
-                    value={formData.orderId}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                      errors.orderId ? "border-2 border-yellow-400" : ""
-                    }`}
-                    placeholder="amazon order id"
-                    required
-                  />
-                  {errors.orderId && (
-                    <p className="text-yellow-400 mt-1">{errors.orderId}</p>
-                  )}
-                </div>
-                <button
-                  onClick={handleNextStep}
-                  className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
-                >
-                  {loading ? "Loading..." : "Next"}
-                </button>
-              </form>
             </div>
-          </div>
+            <div>
+              <label htmlFor="set" className="block text-lg mb-2">
+                Which Study Key set did you choose to add to your learning?
+              </label>
+              <select
+                id="set"
+                name="set"
+                value={formData.set}
+                onChange={handleInputChange}
+                className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                  errors.set ? "border-2 border-yellow-400" : ""
+                }`}
+                required
+              >
+                <option value="">Select Product Set</option>
+                <option value="multi">Multi Set Spanish Flashcards</option>
+                <option value="nouns">
+                  Nouns English to Spanish Flashcards
+                </option>
+                <option value="toddlers">Toddlers English learn & Play</option>
+              </select>
+              {errors.set && (
+                <p className="text-yellow-400 mt-1">{errors.set}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="orderId" className="block text-lg mb-2">
+                Please let me know your order number here. You can find it in
+                your Amazon account under "Orders."
+              </label>
+              <input
+                type="text"
+                id="orderId"
+                name="orderId"
+                value={formData.orderId}
+                onChange={handleInputChange}
+                className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                  errors.orderId ? "border-2 border-yellow-400" : ""
+                }`}
+                placeholder="amazon order id"
+                required
+              />
+              {errors.orderId && (
+                <p className="text-yellow-400 mt-1">{errors.orderId}</p>
+              )}
+              {asin && (
+                <div>
+                  {" "}
+                  <p className="text-lg my-">
+                    Please share your feedback on your current product with us
+                    we’d love to hear your opinion!
+                  </p>
+                  <button
+                    onClick={() =>
+                      window.open(
+                        `https://www.amazon.com/review/create-review/?ie=UTF8&channel=glance-detail&asin=${asin}`,
+                        "_blank"
+                      )
+                    }
+                    className="block w-full bg-red-500 text-white text-center py-3 rounded-lg text-xl font-semibold hover:bg-red-600 transition duration-300"
+                  >
+                    Share my feedback
+                  </button>
+                  <p className="text-gray-600">
+                    This will NOT affect your gift.
+                  </p>
+                </div>
+              )}
+            </div>
+            {isVerify ? (
+              <button
+                onClick={handleNextStep}
+                className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+              >
+                {loading ? "Loading..." : "Next"}
+              </button>
+            ) : (
+              <button
+                onClick={handleVerifyOrder}
+                className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+              >
+                {loading ? "Loading..." : "Verify"}
+              </button>
+            )}
+          </form>
         </div>
       );
     }
     if (step === 2) {
       return (
-        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4 ">
-          <div className="max-w-4xl w-full">
-            <div className="relative">
-              <div className="absolute -left-10 top-0 -translate-x-1/2 z-50 -rotate-6">
-                <img
-                  src={Photo3}
-                  width={250}
-                  height={300}
-                  alt="Don't put off until tomorrow what you can do today."
-                  className="rounded-lg shadow-md"
-                />
-              </div>
-              <div className="absolute -left-20 top-40 -translate-x-1/3 rotate-12 z-40">
-                <img
-                  src={Photo4}
-                  width={250}
-                  height={300}
-                  alt="No dejes para mañana lo que puedes hacer hoy."
-                  className="rounded-lg shadow-md"
-                />
-              </div>
-              <form className="space-y-6 ml-32" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="country" className="block text-lg mb-2">
-                      Country
-                    </label>
-                    <CountrySelect
-                      id="country"
-                      name="country"
-                      value="United States"
-                      onChange={(selectedOption) =>
-                        handleInputChange("country", {
-                          name: "United States",
-                          id: 233,
-                        })
-                      }
-                      disabled={true}
-                      defaultValue={{ name: "United States", id: 233 }}
-                      required
-                      placeHolder="Select Country"
-                      className={{
-                        control: (state) =>
-                          `!bg-red-500 !border-0 !min-h-[48px] !rounded ${
-                            errors.country ? "!border-2 !border-yellow-400" : ""
-                          }`,
-                        singleValue: () => "!text-white",
-                        placeholder: () => "!text-white/70",
-                        input: () => "!text-white",
-                        menu: () => "!bg-red-500 !mt-1",
-                        option: () =>
-                          "!text-white !bg-red-500 hover:!bg-red-600",
-                        container: () => "!text-white",
-                      }}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          padding: "0.5rem",
-                          backgroundColor: "rgb(239 68 68)",
-                          boxShadow: "none",
-                          "&:hover": {
-                            borderColor: errors.country
-                              ? "#FBBF24"
-                              : "transparent",
-                          },
-                        }),
-                        indicatorSeparator: () => ({
-                          display: "none",
-                        }),
-                        dropdownIndicator: (base) => ({
-                          ...base,
-                          color: "white",
-                          "&:hover": {
-                            color: "white",
-                          },
-                        }),
-                      }}
-                    />
-
-                    {errors.country && (
-                      <p className="text-yellow-400 mt-1">{errors.country}</p>
-                    )}
-                  </div>
-
-                  <div className="col-span-2">
-                    <label
-                      htmlFor="streetAddress"
-                      className="block text-lg mb-2"
-                    >
-                      Street Address
-                    </label>
-                    <input
-                      type="text"
-                      id="streetAddress"
-                      name="streetAddress"
-                      value={formData.streetAddress}
-                      onChange={(e) =>
-                        handleInputChange(e.target.name, e.target.value)
-                      }
-                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                        errors.streetAddress ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="Street address"
-                      required
-                    />
-                    {errors.streetAddress && (
-                      <p className="text-yellow-400 mt-1">
-                        {errors.streetAddress}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="state" className="block text-lg mb-2">
-                      State/Province
-                    </label>
-                    <StateSelect
-                      id="state"
-                      name="state"
-                      countryid={233}
-                      value={formData.state.name}
-                      onChange={(selectedOption) =>
-                        handleInputChange("state", {
-                          name: selectedOption.name,
-                          id: selectedOption.id,
-                        })
-                      }
-                      className={`w-full p-3 bg-red-500 text-white rounded ${
-                        errors.state ? "border-2 border-yellow-400" : ""
-                      }`}
-                      required
-                      placeHolder="Select State"
-                    />
-                    {errors.state && (
-                      <p className="text-yellow-400 mt-1">{errors.state}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="city" className="block text-lg mb-2">
-                      City
-                    </label>
-                    <CitySelect
-                      id="city"
-                      name="city"
-                      countryid={233}
-                      stateid={formData.state?.id}
-                      value={formData.city}
-                      onChange={(selectedOption) =>
-                        handleInputChange("city", selectedOption.name)
-                      }
-                      className={`w-full p-3 bg-red-500 text-white rounded ${
-                        errors.city ? "border-2 border-yellow-400" : ""
-                      }`}
-                      required
-                      placeHolder="Select City"
-                    />
-                    {errors.city && (
-                      <p className="text-yellow-400 mt-1">{errors.city}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="zipCode" className="block text-lg mb-2">
-                      ZIP/Postal Code
-                    </label>
-                    <input
-                      type="text"
-                      id="zipCode"
-                      name="zipCode"
-                      maxLength="5"
-                      value={formData.zipCode}
-                      onChange={handleZipCodeChange}
-                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                        errors.zipCode ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="ZIP code"
-                      required
-                    />
-                    {errors.zipCode && (
-                      <p className="text-yellow-400 mt-1">{errors.zipCode}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="phoneNumber" className="block text-lg mb-2">
-                      Phone Number
-                    </label>
-                    <PhoneInput
-                      international={false}
-                      defaultCountry="US"
-                      countrySelectProps={{ disabled: true }}
-                      value={formData.phoneNumber}
-                      onChange={(value) => {
-                        handleInputChange("phoneNumber", value);
-
-                        if (value) {
-                          const isValid =
-                            isPossiblePhoneNumber(value) &&
-                            isValidPhoneNumber(value);
-                          setErrors((prev) => ({
-                            ...prev,
-                            phoneNumber: isValid
-                              ? null
-                              : "Please enter a valid US phone number",
-                          }));
-                        }
-                      }}
-                      className={`w-full  bg-red-500 text-white rounded ${
-                        errors.phoneNumber ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="(XXX) XXX-XXXX"
-                      numberInputProps={{
-                        className: "phone-input-field",
-                        pattern: "[0-9()\\-. ]+", // Fixed pattern with escaped hyphen
-                      }}
-                      required
-                    />
-
-                    {errors.phoneNumber && (
-                      <p className="text-yellow-400 mt-1">
-                        {errors.phoneNumber}
-                      </p>
-                    )}
-                  </div>
-                  <div className="col-span-2">
-                    <label htmlFor="email" className="block text-lg mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange(e.target.name, e.target.value)
-                      }
-                      className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
-                        errors.email ? "border-2 border-yellow-400" : ""
-                      }`}
-                      placeholder="Email address"
-                      required
-                    />
-                    {errors.email && (
-                      <p className="text-yellow-400 mt-1">{errors.email}</p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
-                >
-                  {loading ? "Loading..." : "Submit"}
-                </button>
-              </form>
+        <div className="min-h-screen bg-blue-50 flex flex-col-reverse md:flex-row items-center justify-center p-4 ">
+          <div className=" mt-5">
+            <div className="  z-50 -rotate-6">
+              <img
+                src={Photo3}
+                width={250}
+                height={300}
+                alt="Don't put off until tomorrow what you can do today."
+                className="rounded-lg shadow-md"
+              />
+            </div>
+            <div className="  rotate-12 z-40">
+              <img
+                src={Photo4}
+                width={250}
+                height={300}
+                alt="No dejes para mañana lo que puedes hacer hoy."
+                className="rounded-lg shadow-md"
+              />
             </div>
           </div>
+          <form className="space-y-6 md:ml-10" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="country" className="block text-lg mb-2">
+                  Country
+                </label>
+                <CountrySelect
+                  id="country"
+                  name="country"
+                  value="United States"
+                  onChange={(selectedOption) =>
+                    handleInputChange("country", {
+                      name: "United States",
+                      id: 233,
+                    })
+                  }
+                  disabled={true}
+                  defaultValue={{ name: "United States", id: 233 }}
+                  required
+                  placeHolder="Select Country"
+                  className={{
+                    control: (state) =>
+                      `!bg-red-500 !border-0 !min-h-[48px] !rounded ${
+                        errors.country ? "!border-2 !border-yellow-400" : ""
+                      }`,
+                    singleValue: () => "!text-white",
+                    placeholder: () => "!text-white/70",
+                    input: () => "!text-white",
+                    menu: () => "!bg-red-500 !mt-1",
+                    option: () => "!text-white !bg-red-500 hover:!bg-red-600",
+                    container: () => "!text-white",
+                  }}
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      padding: "0.5rem",
+                      backgroundColor: "rgb(239 68 68)",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: errors.country ? "#FBBF24" : "transparent",
+                      },
+                    }),
+                    indicatorSeparator: () => ({
+                      display: "none",
+                    }),
+                    dropdownIndicator: (base) => ({
+                      ...base,
+                      color: "white",
+                      "&:hover": {
+                        color: "white",
+                      },
+                    }),
+                  }}
+                />
+
+                {errors.country && (
+                  <p className="text-yellow-400 mt-1">{errors.country}</p>
+                )}
+              </div>
+
+              <div className="col-span-2">
+                <label htmlFor="streetAddress" className="block text-lg mb-2">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  id="streetAddress"
+                  name="streetAddress"
+                  value={formData.streetAddress}
+                  onChange={(e) =>
+                    handleInputChange(e.target.name, e.target.value)
+                  }
+                  className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                    errors.streetAddress ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="Street address"
+                  required
+                />
+                {errors.streetAddress && (
+                  <p className="text-yellow-400 mt-1">{errors.streetAddress}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="state" className="block text-lg mb-2">
+                  State/Province
+                </label>
+                <StateSelect
+                  id="state"
+                  name="state"
+                  countryid={233}
+                  value={formData.state.name}
+                  onChange={(selectedOption) =>
+                    handleInputChange("state", {
+                      name: selectedOption.name,
+                      id: selectedOption.id,
+                    })
+                  }
+                  className={`w-full p-3 bg-red-500 text-white rounded ${
+                    errors.state ? "border-2 border-yellow-400" : ""
+                  }`}
+                  required
+                  placeHolder="Select State"
+                />
+                {errors.state && (
+                  <p className="text-yellow-400 mt-1">{errors.state}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="city" className="block text-lg mb-2">
+                  City
+                </label>
+                <CitySelect
+                  id="city"
+                  name="city"
+                  countryid={233}
+                  stateid={formData.state?.id}
+                  value={formData.city}
+                  onChange={(selectedOption) =>
+                    handleInputChange("city", selectedOption.name)
+                  }
+                  className={`w-full p-3 bg-red-500 text-white rounded ${
+                    errors.city ? "border-2 border-yellow-400" : ""
+                  }`}
+                  required
+                  placeHolder="Select City"
+                />
+                {errors.city && (
+                  <p className="text-yellow-400 mt-1">{errors.city}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="zipCode" className="block text-lg mb-2">
+                  ZIP/Postal Code
+                </label>
+                <input
+                  type="text"
+                  id="zipCode"
+                  name="zipCode"
+                  maxLength="5"
+                  value={formData.zipCode}
+                  onChange={handleZipCodeChange}
+                  className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                    errors.zipCode ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="ZIP code"
+                  required
+                />
+                {errors.zipCode && (
+                  <p className="text-yellow-400 mt-1">{errors.zipCode}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="phoneNumber" className="block text-lg mb-2">
+                  Phone Number
+                </label>
+                <PhoneInput
+                  international={false}
+                  defaultCountry="US"
+                  countrySelectProps={{ disabled: true }}
+                  value={formData.phoneNumber}
+                  onChange={(value) => {
+                    handleInputChange("phoneNumber", value);
+
+                    if (value) {
+                      const isValid =
+                        isPossiblePhoneNumber(value) &&
+                        isValidPhoneNumber(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        phoneNumber: isValid
+                          ? null
+                          : "Please enter a valid US phone number",
+                      }));
+                    }
+                  }}
+                  className={`w-full  bg-red-500 text-white rounded ${
+                    errors.phoneNumber ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="(XXX) XXX-XXXX"
+                  numberInputProps={{
+                    className: "phone-input-field",
+                    pattern: "[0-9()\\-. ]+", // Fixed pattern with escaped hyphen
+                  }}
+                  required
+                />
+
+                {errors.phoneNumber && (
+                  <p className="text-yellow-400 mt-1">{errors.phoneNumber}</p>
+                )}
+              </div>
+              <div className="col-span-2">
+                <label htmlFor="email" className="block text-lg mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    handleInputChange(e.target.name, e.target.value)
+                  }
+                  className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
+                    errors.email ? "border-2 border-yellow-400" : ""
+                  }`}
+                  placeholder="Email address"
+                  required
+                />
+                {errors.email && (
+                  <p className="text-yellow-400 mt-1">{errors.email}</p>
+                )}
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
+            >
+              {loading ? "Loading..." : "Submit"}
+            </button>
+          </form>
         </div>
       );
     }
     if (step === 3) {
       return (
-        <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
-          <div className="max-w-6xl w-full flex flex-col md:flex-row items-center md:items-start">
-            <div className="md:w-2/3 space-y-6 text-center md:text-left">
-              <h1 className="text-4xl font-bold">
-                Thank you, {formData.name}!
-              </h1>
-              <p className="text-xl">
-                I'm so excited for you to use it! I'll personally make sure
-                everything goes smoothly.
-              </p>
-              <p className="text-lg">
-                It's a beautiful day! Please let me know how I did with your
-                current set. Your honest feedback helps me create better
-                learning tools for learners like you.
-              </p>
-              <p className="text-lg">
-                I'd love to hear your ideas and thoughts.
-              </p>
-              <button
-                onClick={() =>
-                  window.open(
-                    `https://www.amazon.com/review/create-review/?ie=UTF8&channel=glance-detail&asin=${asin}`,
-                    "_blank"
-                  )
-                }
-                className="block w-full bg-red-500 text-white text-center py-3 rounded-lg text-xl font-semibold hover:bg-red-600 transition duration-300"
-              >
-                Share my feedback
-              </button>
-              <p className="text-gray-600">This will NOT affect your gift.</p>
+        <div className="min-h-screen bg-blue-50 flex flex-col-reverse md:flex-row items-center justify-center p-4">
+          <div className="mt-10 md:mx-10 ">
+            <div className=" rotate-12">
+              <img
+                src={Photo5}
+                width={250}
+                height={300}
+                alt="I understand"
+                layout="fill"
+                objectFit="contain"
+                className="rounded-lg shadow-md"
+              />
             </div>
-            <div className="md:w-1/3 relative h-64 md:h-auto">
-              <div className="absolute top-0 right-0 w-48 h-48 transform rotate-12">
-                <img
-                  src={Photo5}
-                  width={250}
-                  height={300}
-                  alt="I understand"
-                  layout="fill"
-                  objectFit="contain"
-                  className="rounded-lg shadow-md"
-                />
-              </div>
-              <div className="absolute top-16 right-16 w-48 h-48 transform -rotate-6">
-                <img
-                  src={Photo6}
-                  alt="I understand"
-                  width={250}
-                  height={300}
-                  layout="fill"
-                  objectFit="contain"
-                />
-              </div>
+            <div className="  -rotate-6">
+              <img
+                src={Photo6}
+                alt="I understand"
+                width={250}
+                height={300}
+                layout="fill"
+                objectFit="contain"
+              />
             </div>
+          </div>
+          <div className="p-3 flex flex-col gap-5 max-w-2xl">
+            <h1 className="text-4xl font-bold">Thank you, {formData.name}!</h1>
+            <p className="text-xl">
+              I'm so excited for you to use it! I'll personally make sure
+              everything goes smoothly.
+            </p>
+            <p className="text-lg">
+              It's a beautiful day! Please let me know how I did with your
+              current set. Your honest feedback helps me create better learning
+              tools for learners like you.
+            </p>
           </div>
         </div>
       );
