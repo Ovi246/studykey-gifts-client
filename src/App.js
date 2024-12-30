@@ -87,7 +87,9 @@ function Form() {
   useEffect(() => {
     async function fetchLocationAndSetLanguage() {
       try {
-        const response = await axios.get("http://localhost:5000/api/location");
+        const response = await axios.get(
+          "https://studykey-gifts-server.vercel.app/api/location"
+        );
         const geo = response.data;
         const language = getLanguageFromCountryCode(geo.country); // Implement this function
         setLanguage(language);
@@ -306,7 +308,7 @@ function Form() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/validate-order-id",
+        "https://studykey-gifts-server.vercel.app/validate-order-id",
         { orderId: formData.orderId },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -366,7 +368,7 @@ function Form() {
 
         setLoading(true);
         const response = await axios.post(
-          "http://localhost:5000/submit-review",
+          "https://studykey-gifts-server.vercel.app/submit-review",
           formData,
           {
             headers: {
