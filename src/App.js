@@ -87,9 +87,7 @@ function Form() {
   useEffect(() => {
     async function fetchLocationAndSetLanguage() {
       try {
-        const response = await axios.get(
-          "https://studykey-gifts-server.vercel.app/api/location"
-        );
+        const response = await axios.get("http://localhost:5000/api/location");
         const geo = response.data;
         const language = getLanguageFromCountryCode(geo.country); // Implement this function
         setLanguage(language);
@@ -154,20 +152,42 @@ function Form() {
 
       const zipData = response.data;
 
-      // Check if ZIP matches state and city
+      // Check if ZIP matches state (case-insensitive)
       const matchesState = zipData.places.some(
         (place) => place.state.toLowerCase() === state.toLowerCase()
-      );
-
-      const matchesCity = zipData.places.some(
-        (place) => place["place name"].toLowerCase() === city.toLowerCase()
       );
 
       if (!matchesState) {
         return `This ZIP code is not in ${state}`;
       }
+
+      // More lenient city matching
+      const normalizeCity = (cityName) => {
+        return (
+          cityName
+            .toLowerCase()
+            // Remove common suffixes
+            .replace(/(city|town|village|heights|township)$/, "")
+            // Remove special characters and extra spaces
+            .replace(/[^a-z0-9]/g, "")
+            .trim()
+        );
+      };
+
+      const normalizedInputCity = normalizeCity(city);
+      const matchesCity = zipData.places.some((place) => {
+        const normalizedZipCity = normalizeCity(place["place name"]);
+        // Check if either city name contains the other
+        return (
+          normalizedZipCity.includes(normalizedInputCity) ||
+          normalizedInputCity.includes(normalizedZipCity)
+        );
+      });
+
       if (!matchesCity) {
-        return `This ZIP code is not in ${city}`;
+        // Instead of error, just log a warning and allow it
+        console.warn(`Warning: City name might not match ZIP code exactly`);
+        return null;
       }
 
       return null; // Return null if validation passes
@@ -286,7 +306,7 @@ function Form() {
 
     try {
       const response = await axios.post(
-        "https://studykey-gifts-server.vercel.app/validate-order-id",
+        "http://localhost:5000/validate-order-id",
         { orderId: formData.orderId },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -346,7 +366,7 @@ function Form() {
 
         setLoading(true);
         const response = await axios.post(
-          "https://studykey-gifts-server.vercel.app/submit-review",
+          "http://localhost:5000/submit-review",
           formData,
           {
             headers: {
@@ -683,20 +703,17 @@ function Form() {
                 <label htmlFor="city" className="block text-lg mb-2">
                   City
                 </label>
-                <CitySelect
+                <input
+                  type="text"
                   id="city"
                   name="city"
-                  countryid={233}
-                  stateid={formData.state?.id}
                   value={formData.city}
-                  onChange={(selectedOption) =>
-                    handleInputChange("city", selectedOption.name)
-                  }
-                  className={`w-full p-3 bg-red-500 text-white rounded ${
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  className={`w-full p-3 bg-red-500 text-white placeholder-white::placeholder rounded ${
                     errors.city ? "border-2 border-yellow-400" : ""
                   }`}
+                  placeholder="Enter city name"
                   required
-                  placeHolder="Select City"
                 />
                 {errors.city && (
                   <p className="text-yellow-400 mt-1">{errors.city}</p>
