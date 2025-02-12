@@ -72,6 +72,7 @@ function Form() {
     state: { name: "", id: null },
     zipCode: "",
     phoneNumber: "",
+    reviewImage: null,
   });
   const [isCorrect, setIsCorrect] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -313,7 +314,7 @@ function Form() {
         { headers: { "Content-Type": "application/json" } }
       );
       setAsin(response.data.asins[0]);
-      setIsVerify(true);
+      setIsVerify(false);
     } catch (error) {
       if (error?.response?.status === 400) {
         toast.error(
@@ -354,44 +355,82 @@ function Form() {
     }
   };
 
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        reviewImage: file
+      }));
+      setErrors(prev => ({
+        ...prev,
+        reviewImage: ""
+      }));
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (step === 2) {
-      try {
-        // Wait for validateForm to complete since it's async now
-        const isValid = await validateForm();
+    
+    if (!formData.reviewImage) {
+      setErrors(prev => ({
+        ...prev,
+        reviewImage: "Please upload a screenshot of your review"
+      }));
+      toast.error("Please upload a screenshot of your review");
+      return;
+    }
 
-        if (!isValid) {
-          toast.error("Please fill in all required fields");
-          return;
-        }
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
-        setLoading(true);
-        const response = await axios.post(
-          "https://studykey-gifts-server.vercel.app/submit-review",
-          formData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.status === 200) {
-          toast.success("Form submitted successfully!");
-          setTimeout(() => {
-            setStep(step + 1);
-            setCompletedSteps([...completedSteps, step]);
-            setLoading(false);
-          }, 1000); // simulate loading time
+    setLoading(true);
+
+    try {
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'state' || key === 'country') {
+          formDataToSend.append(key, JSON.stringify(value));
+        } else if (key === 'reviewImage') {
+          formDataToSend.append('image', value);
+        } else {
+          formDataToSend.append(key, value);
         }
-      } catch (error) {
-        if (error.response.data.errorCode === "DUPLICATE_CLAIM") {
-          toast.error("This order is already claimed a gift!");
-          setTimeout(() => {
-            setLoading(false);
-          }, 500); // simulate loading time
+      });
+
+      const response = await axios.post(
+        "http://localhost:5000/submit-review",
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            console.log(`Upload Progress: ${percentCompleted}%`);
+          },
         }
+      );
+      
+      if (response.status === 200) {
+        toast.success("Form submitted successfully!");
+        setTimeout(() => {
+          setStep(step + 1);
+          setCompletedSteps([...completedSteps, step]);
+          setLoading(false);
+        }, 1000);
       }
+    } catch (error) {
+      if (error.response?.data?.errorCode === "DUPLICATE_CLAIM") {
+        toast.error("This order is already claimed a gift!");
+      } else {
+        toast.error(error.response?.data?.message || "Error submitting form");
+      }
+      setLoading(false);
     }
   };
 
@@ -529,11 +568,10 @@ function Form() {
                 <p className="text-yellow-400 mt-1">{errors.orderId}</p>
               )}
               {asin && (
-                <div>
-                  {" "}
-                  <p className="text-lg my-">
+                <div className="space-y-4">
+                  <p className="text-lg">
                     Please share your feedback on your current product with us
-                    we’d love to hear your opinion!
+                    we'd love to hear your opinion!
                   </p>
                   <button
                     onClick={() =>
@@ -546,13 +584,32 @@ function Form() {
                   >
                     Share my feedback
                   </button>
+                  <div className="mt-4">
+                    <label className="block text-lg mb-2">
+                      Upload screenshot of your review
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className={`w-full p-3 bg-red-500 text-white rounded ${
+                        errors.reviewImage ? "border-2 border-yellow-400" : ""
+                      }`}
+                    />
+                    {errors.reviewImage && (
+                      <p className="text-yellow-400 mt-1">{errors.reviewImage}</p>
+                    )}
+                    {formData.reviewImage && (
+                      <p className="text-green-500 mt-1">Screenshot uploaded successfully!</p>
+                    )}
+                  </div>
                   <p className="text-gray-600">
-                    This will NOT affect your gift.
+                    *Please upload a screenshot of your review to proceed
                   </p>
                 </div>
               )}
             </div>
-            {isVerify ? (
+            {formData.reviewImage ? (
               <button
                 onClick={handleNextStep}
                 className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
