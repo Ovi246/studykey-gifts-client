@@ -401,7 +401,7 @@ function Form() {
       });
 
       const response = await axios.post(
-        "http://localhost:5000/submit-review",
+        "https://studykey-gifts-server.vercel.app/submit-review",
         formDataToSend,
         {
           headers: {
