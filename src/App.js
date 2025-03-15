@@ -552,6 +552,7 @@ function Form() {
                 Please let me know your order number here. You can find it in
                 your Amazon account under "Orders."
               </label>
+              <p className="text-red-500 mt-1">you must type with dashes between order-id ex: 222-222-2222</p>
               <input
                 type="text"
                 id="orderId"
@@ -810,26 +811,21 @@ function Form() {
                   value={formData.phoneNumber}
                   onChange={(value) => {
                     handleInputChange("phoneNumber", value);
-
                     if (value) {
-                      const isValid =
-                        isPossiblePhoneNumber(value) &&
-                        isValidPhoneNumber(value);
+                      const isValid = isPossiblePhoneNumber(value) && isValidPhoneNumber(value);
                       setErrors((prev) => ({
                         ...prev,
-                        phoneNumber: isValid
-                          ? null
-                          : "Please enter a valid US phone number",
+                        phoneNumber: isValid ? null : "Please enter a valid US phone number",
                       }));
                     }
                   }}
-                  className={`w-full  bg-red-500 text-white rounded ${
+                  className={`w-full bg-red-500 text-white rounded ${
                     errors.phoneNumber ? "border-2 border-yellow-400" : ""
                   }`}
                   placeholder="(XXX) XXX-XXXX"
                   numberInputProps={{
                     className: "phone-input-field",
-                    pattern: "[0-9()\\-. ]+", // Fixed pattern with escaped hyphen
+                    pattern: "[0-9() .-]+", // Fixed regex pattern
                   }}
                   required
                 />
