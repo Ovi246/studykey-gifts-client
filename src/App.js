@@ -552,7 +552,7 @@ function Form() {
                 Please let me know your order number here. You can find it in
                 your Amazon account under "Orders."
               </label>
-              <p className="text-red-500 mt-1">you must type with dashes between order-id ex: 222-222-2222</p>
+              <p className="text-red-500 my-1">( you must type with dashes between order-id ex: 222-222-2222 )</p>
               <input
                 type="text"
                 id="orderId"
