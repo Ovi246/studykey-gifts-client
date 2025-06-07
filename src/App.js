@@ -552,7 +552,7 @@ function Form() {
                 Please let me know your order number here. You can find it in
                 your Amazon account under "Orders."
               </label>
-              <p className="text-red-500 my-1">(note- please enter order id exactly as provided by amazon )</p>
+              <p className="text-blue-500 my-1">(note- please enter order id exactly as provided by amazon )</p>
               <input
                 type="text"
                 id="orderId"
@@ -604,7 +604,7 @@ function Form() {
                       <p className="text-green-500 mt-1">Screenshot uploaded successfully!</p>
                     )}
                   </div>
-                  <p className="text-gray-600">
+                  <p className="text-white">
                     *Please upload a screenshot of your review to proceed
                   </p>
                 </div>
@@ -911,21 +911,21 @@ function Form() {
     return (
       <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
         <div className="max-w-2xl md:max-w-4xl w-full text-center space-y-6">
-          <h1 className="text-4xl font-bold text-gray-800">Hiiiiii....</h1>
-          <p className="text-xl md:text-4xl text-gray-700 leading-relaxed">
+          <h1 className="text-4xl font-bold text-white">Hiiiiii....</h1>
+          <p className="text-xl md:text-4xl text-white leading-relaxed">
             Since you took the leap to start your learning journey, I wanted to
             give you this gift to add a little fun and soul.
           </p>
-          <p className="text-xl md:text-4xl text-gray-700 leading-relaxed">
+          <p className="text-xl md:text-4xl text-white leading-relaxed">
             It took me a few months to create and perfect this gift, but I
             wanted it to have the perfect balance! I hope you enjoy it!
           </p>
-          <p className="text-xl md:text-4xl text-gray-700">
+          <p className="text-xl md:text-4xl text-white">
             With love,
             <br />
             <span className="font-semibold">Nafiseh</span>
           </p>
-          <p className="text-lg text-gray-600 font-semibold italic">
+          <p className="text-lg text-white font-semibold italic">
             Founder & Fellow Spanish Lover
           </p>
           <div className="pt-6">
