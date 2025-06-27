@@ -355,31 +355,31 @@ function Form() {
     }
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        reviewImage: file
-      }));
-      setErrors(prev => ({
-        ...prev,
-        reviewImage: ""
-      }));
-    }
-  };
+  // const handleFileUpload = (event) => {
+  //   const file = event.target.files[0];
+  //   if (file) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       reviewImage: file
+  //     }));
+  //     setErrors(prev => ({
+  //       ...prev,
+  //       reviewImage: ""
+  //     }));
+  //   }
+  // };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     
-    if (!formData.reviewImage) {
-      setErrors(prev => ({
-        ...prev,
-        reviewImage: "Please upload a screenshot of your review"
-      }));
-      toast.error("Please upload a screenshot of your review");
-      return;
-    }
+    // if (!formData.reviewImage) {
+    //   setErrors(prev => ({
+    //     ...prev,
+    //     reviewImage: "Please upload a screenshot of your review"
+    //   }));
+    //   toast.error("Please upload a screenshot of your review");
+    //   return;
+    // }
 
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
@@ -407,12 +407,12 @@ function Form() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            console.log(`Upload Progress: ${percentCompleted}%`);
-          },
+          // onUploadProgress: (progressEvent) => {
+          //   const percentCompleted = Math.round(
+          //     (progressEvent.loaded * 100) / progressEvent.total
+          //   );
+          //   console.log(`Upload Progress: ${percentCompleted}%`);
+          // },
         }
       );
       
@@ -585,7 +585,7 @@ function Form() {
                   >
                     Share my feedback
                   </button>
-                  <div className="mt-4">
+                  {/* <div className="mt-4">
                     <label className="block text-lg mb-2">
                       Upload screenshot of your review
                     </label>
@@ -603,14 +603,14 @@ function Form() {
                     {formData.reviewImage && (
                       <p className="text-green-500 mt-1">Screenshot uploaded successfully!</p>
                     )}
-                  </div>
-                  <p className="text-gray-600">
+                  </div> */}
+                  {/* <p className="text-gray-600">
                     *Please upload a screenshot of your review to proceed
-                  </p>
+                  </p> */}
                 </div>
               )}
             </div>
-            {formData.reviewImage ? (
+            {asin ? (
               <button
                 onClick={handleNextStep}
                 className="inline-block bg-red-500 text-white font-bold py-3 px-12 rounded text-xl hover:bg-red-600 transition duration-300"
@@ -825,7 +825,6 @@ function Form() {
                   placeholder="(XXX) XXX-XXXX"
                   numberInputProps={{
                     className: "phone-input-field",
-                    pattern: "[0-9() .-]+", // Fixed regex pattern
                   }}
                   required
                 />
